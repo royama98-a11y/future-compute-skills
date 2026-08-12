@@ -16,92 +16,64 @@ window['ai_edge_gallery_get_result'] = async (data) => {
         const params = JSON.parse(data);
 
         const query = params.query;
-        const maxResults = params.max_results || 5;
 
         if (!query) {
             throw new Error("Missing search query");
         }
 
-        const searchUrl =
-            "https://api.duckduckgo.com/" +
-            "?q=" + encodeURIComponent(query) +
-            "&format=json" +
-            "&no_html=1" +
-            "&skip_disambig=1";
+        const testResponse = await fetch(
+            "https://www.google.com/robots.txt"
+        );
 
-        const response = await fetch(searchUrl, {
-    headers: {
-        "Accept": "application/json"
-    }
-});
-
-if (!response.ok) {
-    const errorText = await response.text();
-
-    throw new Error(
-        `Search request failed. HTTP ${response.status}. ` +
-        `Response: ${errorText.slice(0, 300)}`
-    );
-}
-
-        const data = await response.json();
-
-        const results = [];
-
-        if (data.AbstractText) {
-
-            results.push({
-                title: data.Heading || query,
-                url: data.AbstractURL || "",
-                source: data.AbstractSource || "DuckDuckGo",
-                snippet: data.AbstractText
-            });
-
+        if (!testResponse.ok) {
+            throw new Error(
+                `Network test failed with HTTP ${testResponse.status}`
+            );
         }
 
-        if (Array.isArray(data.RelatedTopics)) {
-
-            for (const item of data.RelatedTopics) {
-
-                if (
-                    item &&
-                    item.Text &&
-                    item.FirstURL
-                ) {
-
-                    results.push({
-                        title: item.Text.split(" - ")[0],
-                        url: item.FirstURL,
-                        source: "DuckDuckGo",
-                        snippet: item.Text
-                    });
-
-                }
-
-                if (results.length >= maxResults) {
-                    break;
-                }
-            }
-
-        }
+        const testText = await testResponse.text();
 
         return JSON.stringify({
 
             result: {
-                query: query,
-                result_count: results.length,
-                results: results
+                network_test: "SUCCESS",
+                http_status: testResponse.status,
+                response_preview: testText.slice(0, 200)
             }
 
         });
 
     } catch (error) {
 
-        console.error(error);
+        const errorMessage =
+            error && error.message
+                ? error.message
+                : String(error);
+
+        const errorName =
+            error && error.name
+                ? error.name
+                : "UnknownError";
+
+        const errorStack =
+            error && error.stack
+                ? error.stack
+                : "";
+
+        console.error(
+            "WEB_RESEARCH_ERROR: " +
+            errorName +
+            " | " +
+            errorMessage
+        );
 
         return JSON.stringify({
 
-            error: `Web research failed: ${error.message}`
+            error: {
+                name: errorName,
+                message: errorMessage,
+                stack: errorStack
+            }
 
         });
 
