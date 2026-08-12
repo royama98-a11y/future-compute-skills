@@ -16,23 +16,23 @@ window['ai_edge_gallery_get_result'] = async (data) => {
         const params = JSON.parse(data);
 
         const query = params.query;
-        const maxResults = params.max_results || 5;
 
         if (!query) {
             throw new Error("Missing search query");
         }
 
-        const searchUrl =
-            "https://s.jina.ai/?q=" +
-            encodeURIComponent(query);
+        const url =
+            "https://news.google.com/rss/search?q=" +
+            encodeURIComponent(query) +
+            "&hl=en-US&gl=US&ceid=US:en";
 
-        console.log("Searching:", searchUrl);
+        console.log("Fetching Google News RSS:", url);
 
-        const response = await fetch(searchUrl);
+        const response = await fetch(url);
 
         if (!response.ok) {
             throw new Error(
-                `Search returned HTTP ${response.status}`
+                `Google News returned HTTP ${response.status}`
             );
         }
 
@@ -41,8 +41,8 @@ window['ai_edge_gallery_get_result'] = async (data) => {
         return JSON.stringify({
             success: true,
             query: query,
-            max_results: maxResults,
-            result_length: text.length,
+            source: "Google News RSS",
+            response_length: text.length,
             raw_result: text
         });
 
