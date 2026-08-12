@@ -29,13 +29,20 @@ window['ai_edge_gallery_get_result'] = async (data) => {
             "&no_html=1" +
             "&skip_disambig=1";
 
-        const response = await fetch(searchUrl);
+        const response = await fetch(searchUrl, {
+    headers: {
+        "Accept": "application/json"
+    }
+});
 
-        if (!response.ok) {
-            throw new Error(
-                `Search request failed with HTTP ${response.status}`
-            );
-        }
+if (!response.ok) {
+    const errorText = await response.text();
+
+    throw new Error(
+        `Search request failed. HTTP ${response.status}. ` +
+        `Response: ${errorText.slice(0, 300)}`
+    );
+}
 
         const data = await response.json();
 
