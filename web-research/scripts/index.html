@@ -14,31 +14,36 @@ window['ai_edge_gallery_get_result'] = async (data) => {
     try {
 
         const params = JSON.parse(data);
+
         const query = params.query;
+        const maxResults = params.max_results || 5;
 
         if (!query) {
             throw new Error("Missing search query");
         }
 
-        const url =
-            "https://html.duckduckgo.com/html/?q=" +
+        const searchUrl =
+            "https://s.jina.ai/?q=" +
             encodeURIComponent(query);
 
-        const response = await fetch(url);
+        console.log("Searching:", searchUrl);
+
+        const response = await fetch(searchUrl);
 
         if (!response.ok) {
             throw new Error(
-                `DuckDuckGo returned HTTP ${response.status}`
+                `Search returned HTTP ${response.status}`
             );
         }
 
-        const html = await response.text();
+        const text = await response.text();
 
         return JSON.stringify({
             success: true,
             query: query,
-            response_length: html.length,
-            preview: html.slice(0, 1000)
+            max_results: maxResults,
+            result_length: text.length,
+            raw_result: text
         });
 
     } catch (error) {
@@ -57,6 +62,7 @@ window['ai_edge_gallery_get_result'] = async (data) => {
                 message: error.message || String(error)
             }
         });
+
     }
 
 };
