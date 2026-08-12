@@ -14,69 +14,49 @@ window['ai_edge_gallery_get_result'] = async (data) => {
     try {
 
         const params = JSON.parse(data);
-
         const query = params.query;
 
         if (!query) {
             throw new Error("Missing search query");
         }
 
-        const testResponse = await fetch(
-            "https://www.google.com/robots.txt"
-        );
+        const url =
+            "https://html.duckduckgo.com/html/?q=" +
+            encodeURIComponent(query);
 
-        if (!testResponse.ok) {
+        const response = await fetch(url);
+
+        if (!response.ok) {
             throw new Error(
-                `Network test failed with HTTP ${testResponse.status}`
+                `DuckDuckGo returned HTTP ${response.status}`
             );
         }
 
-        const testText = await testResponse.text();
+        const html = await response.text();
 
         return JSON.stringify({
-
-            result: {
-                network_test: "SUCCESS",
-                http_status: testResponse.status,
-                response_preview: testText.slice(0, 200)
-            }
-
+            success: true,
+            query: query,
+            response_length: html.length,
+            preview: html.slice(0, 1000)
         });
 
     } catch (error) {
 
-        const errorMessage =
-            error && error.message
-                ? error.message
-                : String(error);
-
-        const errorName =
-            error && error.name
-                ? error.name
-                : "UnknownError";
-
-        const errorStack =
-            error && error.stack
-                ? error.stack
-                : "";
-
         console.error(
             "WEB_RESEARCH_ERROR: " +
-            errorName +
+            (error.name || "UnknownError") +
             " | " +
-            errorMessage
+            (error.message || String(error))
         );
 
         return JSON.stringify({
-
+            success: false,
             error: {
-                name: errorName,
-                message: errorMessage,
-                stack: errorStack
+                name: error.name || "UnknownError",
+                message: error.message || String(error)
             }
-
         });
-
     }
 
 };
