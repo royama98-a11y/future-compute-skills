@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Web Research</title>
+</head>
+
+<body>
+
+<script>
+
+window['ai_edge_gallery_get_result'] = async (data) => {
+
+    try {
+
+        const params = JSON.parse(data);
+
+        const query = params.query;
+        const maxResults = params.max_results || 5;
+
+        if (!query) {
+            throw new Error("Missing search query");
+        }
+
+        const searchUrl =
+            "https://api.duckduckgo.com/" +
+            "?q=" + encodeURIComponent(query) +
+            "&format=json" +
+            "&no_html=1" +
+            "&skip_disambig=1";
+
+        const response = await fetch(searchUrl);
+
+        if (!response.ok) {
+            throw new Error(
+                `Search request failed with HTTP ${response.status}`
+            );
+        }
+
+        const data = await response.json();
+
+        const results = [];
+
+        if (data.AbstractText) {
+
+            results.push({
+                title: data.Heading || query,
+                url: data.AbstractURL || "",
+                source: data.AbstractSource || "DuckDuckGo",
+                snippet: data.AbstractText
+            });
+
+        }
+
+        if (Array.isArray(data.RelatedTopics)) {
+
+            for (const item of data.RelatedTopics) {
+
+                if (
+                    item &&
+                    item.Text &&
+                    item.FirstURL
+                ) {
+
+                    results.push({
+                        title: item.Text.split(" - ")[0],
+                        url: item.FirstURL,
+                        source: "DuckDuckGo",
+                        snippet: item.Text
+                    });
+
+                }
+
+                if (results.length >= maxResults) {
+                    break;
+                }
+            }
+
+        }
+
+        return JSON.stringify({
+
+            result: {
+                query: query,
+                result_count: results.length,
+                results: results
+            }
+
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        return JSON.stringify({
+
+            error: `Web research failed: ${error.message}`
+
+        });
+
+    }
+
+};
+
+</script>
+
+</body>
+</html>
